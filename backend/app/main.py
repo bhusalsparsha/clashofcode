@@ -138,7 +138,19 @@ async def debug_routes():
         "active_websockets": manager.snapshot(),
     }
 
+from sqlalchemy import text
 
+@app.get("/debug/db")
+async def debug_db():
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            text("SELECT current_database(), current_user")
+        )
+        row = result.fetchone()
+        return {
+            "database": row[0],
+            "user": row[1],
+        }
 @app.get("/debug/questions")
 async def debug_questions():
     async with AsyncSessionLocal() as db:
@@ -164,3 +176,4 @@ async def debug_questions():
             "count": len(all_questions),
             "sample": sample,
         }
+        
