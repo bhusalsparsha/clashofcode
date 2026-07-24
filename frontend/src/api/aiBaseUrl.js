@@ -3,7 +3,7 @@
 // module load and cached, so every caller (ChatBox, AIAnalysisCard, etc.)
 // shares the same resolved URL instead of re-running the health check.
 
-export const RENDER_URL = "https://clashofcode-4cz0.onrender.com/";
+export const RENDER_URL = "https://clashofcode-4cz0.onrender.com";
 export const LOCAL_URL = "http://localhost:8000";
 
 export const apiURLPromise = fetch(`${LOCAL_URL}/health`, {
