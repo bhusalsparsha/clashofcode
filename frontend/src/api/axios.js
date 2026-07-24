@@ -6,21 +6,18 @@ import axios from "axios";
  * ==============================
  */
 
-const RAILWAY_API = "https://clashofcode-production.up.railway.app";
-const LOCAL_API = "http://localhost:8000";
+const RENDER_API = "https://clashofcode-4cz0.onrender.com";
 
-// Public base URL for components that build raw URLs
-export const API_BASE_URL = RAILWAY_API;
+// Render is now the single main API for local dev, Vercel preview, and production.
+export const API_BASE_URL = RENDER_API;
 
 /**
- * All /rooms/* endpoints live exclusively on Railway.
- * Routing any of them to localhost causes 404s because the local dev server
- * does not implement room or matchmaking routes.
- * This function always returns railwayAPI — kept as a function for
- * future extensibility (e.g. forceLocal flag).
+ * All /rooms/*, matchmaking, and everything else live on Render.
+ * Kept as a function for future extensibility (e.g. a forceLocal flag
+ * if you ever want to spin up a local backend again).
  */
 function chooseApiInstance() {
-    return railwayAPI;
+    return renderAPI;
 }
 
 /**
@@ -31,8 +28,6 @@ export async function requestAPI(url, options = {}) {
     const data = options.data;
     const config = options.config || {};
 
-    // forceLocal is intentionally ignored — local has no room routes.
-    // All requests go to Railway.
     const instance = chooseApiInstance();
 
     // Ensure Authorization header is set if token exists in localStorage.
@@ -53,31 +48,24 @@ export async function requestAPI(url, options = {}) {
         // for post/put/patch/delete, axios expects (url, data, config)
         return await instance[method](url, data, config);
     } catch (err) {
-        // Surface the real Railway error so callers can read
-        // err.response.data.detail and show a meaningful message.
         const httpStatus = err?.response?.status;
         const detail = err?.response?.data?.detail || err?.message || "Request failed";
-        console.error(`❌ Railway request failed for ${url} [${httpStatus ?? "network"}]:`, detail);
+        console.error(`❌ Render API request failed for ${url} [${httpStatus ?? "network"}]:`, detail);
         throw err;
     }
 }
 
 /**
  * ==============================
- * AXIOS INSTANCES
+ * AXIOS INSTANCE
  * ==============================
  */
-const railwayAPI = axios.create({
-    baseURL: RAILWAY_API,
+const renderAPI = axios.create({
+    baseURL: RENDER_API,
     timeout: 8000,
 });
 
-const localAPI = axios.create({
-    baseURL: LOCAL_API,
-    timeout: 5000,
-});
-
-// Attach auth token from localStorage to both instances
+// Attach auth token from localStorage
 function attachAuthInterceptors(instance) {
     instance.interceptors.request.use(
         (config) => {
@@ -101,46 +89,41 @@ function attachAuthInterceptors(instance) {
     );
 }
 
-attachAuthInterceptors(railwayAPI);
-attachAuthInterceptors(localAPI);
+attachAuthInterceptors(renderAPI);
 
 /**
  * Keep the old smart fallback util for code that used it directly.
  */
 export const apiRequest = async (config) => {
     try {
-        const response = await railwayAPI(config);
+        const response = await renderAPI(config);
         return response.data;
     } catch (error) {
-        console.warn("⚠ Railway request failed:", error?.response?.data?.detail || error?.message);
+        console.warn("⚠ Render request failed:", error?.response?.data?.detail || error?.message);
         throw error;
     }
 };
 
-export const railway = railwayAPI;
-export const local = localAPI;
+export const render = renderAPI;
 
 /**
- * Set or remove Authorization header on both API instances.
+ * Set or remove Authorization header on the API instance.
  * @param {string|null} token
  */
 export function setAuthToken(token) {
     if (token) {
-        const header = `Bearer ${token}`;
-        railwayAPI.defaults.headers.common.Authorization = header;
-        localAPI.defaults.headers.common.Authorization = header;
+        renderAPI.defaults.headers.common.Authorization = `Bearer ${token}`;
     } else {
-        delete railwayAPI.defaults.headers.common.Authorization;
-        delete localAPI.defaults.headers.common.Authorization;
+        delete renderAPI.defaults.headers.common.Authorization;
     }
 }
 
 /**
- * Backwards-compatible default API object that routes requests automatically.
+ * Backwards-compatible default API object that routes requests to Render.
  * It exposes `get`, `post`, `put`, `delete`, and `defaults` so existing code continues to work.
  */
 const api = {
-    defaults: railwayAPI.defaults,
+    defaults: renderAPI.defaults,
     get: (url, config = {}) => requestAPI(url, { method: "get", data: config.params, config }),
     post: (url, data, config = {}) => requestAPI(url, { method: "post", data, config }),
     put: (url, data, config = {}) => requestAPI(url, { method: "put", data, config }),
