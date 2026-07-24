@@ -3,9 +3,13 @@ import logging
 from pathlib import Path
 
 from dotenv import load_dotenv
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    create_async_engine,
+)
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
+# Load .env for local development
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 load_dotenv()
@@ -14,12 +18,19 @@ logger = logging.getLogger(__name__)
 
 
 def normalize_database_url(url: str) -> str:
+    """
+    Convert a standard PostgreSQL URL into the asyncpg format
+    required by SQLAlchemy Async.
+    """
     if url.startswith("postgresql+asyncpg://"):
         return url
+
     if url.startswith("postgres://"):
         return "postgresql+asyncpg://" + url[len("postgres://"):]
+
     if url.startswith("postgresql://"):
         return "postgresql+asyncpg://" + url[len("postgresql://"):]
+
     return url
 
 
@@ -32,12 +43,12 @@ if not DATABASE_URL:
 
 DATABASE_URL = normalize_database_url(DATABASE_URL)
 
-logger.info("Using database: %s", DATABASE_URL.split("@")[1])
+logger.info("Database configured successfully.")
 
 engine = create_async_engine(
     DATABASE_URL,
-    echo=False,
-    pool_pre_ping=True,
+    echo=False,          # Set True only while debugging
+    pool_pre_ping=True,  # Reconnect automatically if connection is stale
 )
 
 AsyncSessionLocal = sessionmaker(

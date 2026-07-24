@@ -55,9 +55,11 @@ Thumbs.db
 # ── Project-specific ──────────────────────────────────────
 scripts/generate_architecture_pdf.mjs
 output/pdf/
+backend/migratetosupabase.py
 
 # ── Misc ──────────────────────────────────────────────────
 *.local
 *.bak
 *.tmp
 *.9ZCKaQK4QiUaWv7k
+.gitignore
