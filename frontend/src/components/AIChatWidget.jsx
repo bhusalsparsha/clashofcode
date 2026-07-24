@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./AIChatWidget.css";
 
-const RAILWAY_URL = "https://clashofcode-production.up.railway.app";
+const RENDER_URL = "https://clashofcode-4cz0.onrender.com";
 const LOCAL_URL = "http://localhost:8000";
 
 // Probe once on module load — result is cached for all subsequent sends
@@ -10,7 +10,7 @@ const apiURLPromise = fetch(`${LOCAL_URL}/health`, {
   signal: AbortSignal.timeout(800),
 })
   .then(() => LOCAL_URL)
-  .catch(() => RAILWAY_URL);
+  .catch(() => RENDER_URL);
 
 export default function AIChatWidget() {
   const [open, setOpen] = useState(false);
